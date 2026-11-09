@@ -3,7 +3,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mon Pronostic NBA</title>
 
 <style>
@@ -22,12 +22,13 @@ body {
 h1 {
   text-align: center;
   margin-bottom: 8px;
+  font-size: 30px;
 }
 
 .subtitle {
   text-align: center;
   color: #aab5c5;
-  margin-bottom: 28px;
+  margin-bottom: 25px;
 }
 
 .conferences {
@@ -42,13 +43,15 @@ h1 {
   background: #1c293b;
   border-radius: 14px;
   padding: 16px;
+  min-width: 0;
 }
 
 .conference h2 {
   text-align: center;
-  padding: 13px;
+  padding: 14px;
   margin: 0 0 16px;
   border-radius: 9px;
+  font-size: 19px;
 }
 
 .east h2 {
@@ -60,22 +63,22 @@ h1 {
 }
 
 .team-list {
-  min-height: 50px;
+  min-height: 40px;
 }
 
 .team {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   background: #29384d;
   margin-bottom: 8px;
-  padding: 13px 10px;
+  padding: 12px 9px;
   border-radius: 9px;
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
-  transition: background 0.15s, transform 0.15s;
+  transition: background 0.15s;
 }
 
 .team:active {
@@ -83,32 +86,31 @@ h1 {
 }
 
 .team.dragging {
-  opacity: 0.35;
+  opacity: 0.45;
   background: #506782;
-}
-
-.team.over {
-  border-top: 3px solid #38bdf8;
+  pointer-events: none;
+  border: 2px dashed #64c7ff;
 }
 
 .position {
-  width: 27px;
+  width: 25px;
+  flex-shrink: 0;
   color: #aab5c5;
   font-weight: bold;
   text-align: center;
-  flex-shrink: 0;
 }
 
 .team-name {
   flex: 1;
-  font-weight: bold;
   font-size: 14px;
+  font-weight: bold;
+  min-width: 0;
 }
 
 .handle {
   color: #aab5c5;
-  font-size: 20px;
-  padding: 0 5px;
+  font-size: 21px;
+  padding: 0 4px;
 }
 
 .move {
@@ -121,7 +123,7 @@ h1 {
   border-radius: 5px;
   background: #43546c;
   color: white;
-  padding: 5px 9px;
+  padding: 6px 9px;
   cursor: pointer;
   font-size: 16px;
 }
@@ -136,12 +138,13 @@ h1 {
 }
 
 .actions button {
-  padding: 11px 17px;
+  padding: 12px 18px;
   margin: 5px;
   border: 0;
   border-radius: 8px;
   cursor: pointer;
   font-weight: bold;
+  font-size: 14px;
 }
 
 #reset {
@@ -158,7 +161,7 @@ h1 {
   text-align: center;
   color: #aab5c5;
   font-size: 13px;
-  margin-top: 20px;
+  margin-top: 22px;
 }
 
 @media (max-width: 650px) {
@@ -166,9 +169,25 @@ h1 {
     padding: 12px;
   }
 
+  h1 {
+    font-size: 25px;
+  }
+
   .conferences {
     grid-template-columns: 1fr;
     gap: 18px;
+  }
+
+  .conference {
+    padding: 12px;
+  }
+
+  .team {
+    padding: 13px 8px;
+  }
+
+  .team-name {
+    font-size: 13px;
   }
 }
 </style>
@@ -177,7 +196,10 @@ h1 {
 <body>
 
 <h1>🏀 Mon Pronostic NBA</h1>
-<p class="subtitle">Déplace les équipes pour créer ton classement</p>
+
+<p class="subtitle">
+  Organise ton classement NBA comme tu le souhaites
+</p>
 
 <div class="conferences">
 
@@ -198,8 +220,8 @@ h1 {
 </p>
 
 <div class="actions">
-  <button id="reset">Réinitialiser</button>
-  <button id="export">Exporter mes pronostics</button>
+  <button id="reset">↻ Réinitialiser</button>
+  <button id="export">↓ Exporter mes pronostics</button>
 </div>
 
 <script>
@@ -242,62 +264,71 @@ const initialWest = [
 let east = [...initialEast];
 let west = [...initialWest];
 
-let draggedTeam = null;
-let draggedConference = null;
-let startY = 0;
-let isDragging = false;
+let activeTeam = null;
+let activeConference = null;
+let activePointerId = null;
+let moved = false;
+
+// SAUVEGARDE
 
 function save() {
   localStorage.setItem("nba-east", JSON.stringify(east));
   localStorage.setItem("nba-west", JSON.stringify(west));
 }
 
+// CHARGEMENT DES CLASSEMENTS
+
 function load() {
   try {
     const savedEast = JSON.parse(localStorage.getItem("nba-east"));
     const savedWest = JSON.parse(localStorage.getItem("nba-west"));
 
-    if (Array.isArray(savedEast) && savedEast.length === 15) {
+    if (
+      Array.isArray(savedEast) &&
+      savedEast.length === 15 &&
+      initialEast.every(team => savedEast.includes(team))
+    ) {
       east = savedEast;
     }
 
-    if (Array.isArray(savedWest) && savedWest.length === 15) {
+    if (
+      Array.isArray(savedWest) &&
+      savedWest.length === 15 &&
+      initialWest.every(team => savedWest.includes(team))
+    ) {
       west = savedWest;
     }
+
   } catch (error) {
-    console.warn("Erreur de chargement des classements.");
+    console.log("Chargement impossible.");
   }
 }
 
-function renderList(list, elementId, conference) {
-  const container = document.getElementById(elementId);
+// AFFICHAGE DES ÉQUIPES
+
+function renderList(list, id, conference) {
+  const container = document.getElementById(id);
   container.innerHTML = "";
 
   list.forEach((team, index) => {
+
     const row = document.createElement("div");
+
     row.className = "team";
-    row.dataset.index = index;
     row.dataset.conference = conference;
 
     row.innerHTML = `
       <span class="position">${index + 1}</span>
       <span class="team-name"></span>
       <span class="handle">☰</span>
+
       <span class="move">
-        <button type="button" class="up">↑</button>
-        <button type="button" class="down">↓</button>
+        <button type="button" class="up" aria-label="Monter">↑</button>
+        <button type="button" class="down" aria-label="Descendre">↓</button>
       </span>
     `;
 
     row.querySelector(".team-name").textContent = team;
-
-    row.querySelector(".up").addEventListener("pointerdown", e => {
-      e.stopPropagation();
-    });
-
-    row.querySelector(".down").addEventListener("pointerdown", e => {
-      e.stopPropagation();
-    });
 
     row.querySelector(".up").addEventListener("click", () => {
       moveTeam(conference, index, index - 1);
@@ -318,92 +349,103 @@ function render() {
   renderList(west, "west-list", "west");
 }
 
+// DÉPLACEMENT AVEC LES FLÈCHES
+
 function moveTeam(conference, from, to) {
   const list = conference === "east" ? east : west;
 
-  if (to < 0 || to >= list.length || from === to) return;
+  if (to < 0 || to >= list.length || from === to) {
+    return;
+  }
 
-  const [team] = list.splice(from, 1);
+  const team = list.splice(from, 1)[0];
   list.splice(to, 0, team);
 
   save();
   render();
 }
 
-// Déplacement à la souris ou au doigt
+// DÉBUT DU GLISSER-DÉPOSER
+
 function startDrag(event) {
   if (event.target.closest("button")) return;
-  if (event.button !== 0) return;
+  if (!event.isPrimary) return;
 
-  draggedTeam = event.currentTarget;
-  draggedConference = draggedTeam.dataset.conference;
-  startY = event.clientY;
-  isDragging = false;
-
-  draggedTeam.setPointerCapture(event.pointerId);
-
-  draggedTeam.addEventListener("pointermove", dragMove);
-  draggedTeam.addEventListener("pointerup", endDrag);
-  draggedTeam.addEventListener("pointercancel", endDrag);
-}
-
-function dragMove(event) {
-  if (!draggedTeam) return;
-
-  const distance = Math.abs(event.clientY - startY);
-
-  if (!isDragging && distance < 5) return;
-
-  if (!isDragging) {
-    isDragging = true;
-    draggedTeam.classList.add("dragging");
+  if (event.pointerType === "mouse" && event.button !== 0) {
+    return;
   }
 
-  const listElement = document.getElementById(
-    draggedConference + "-list"
+  activeTeam = event.currentTarget;
+  activeConference = activeTeam.dataset.conference;
+  activePointerId = event.pointerId;
+  moved = false;
+
+  event.preventDefault();
+
+  activeTeam.classList.add("dragging");
+}
+
+// DÉPLACEMENT À LA SOURIS OU AU DOIGT
+
+document.addEventListener("pointermove", event => {
+
+  if (!activeTeam) return;
+  if (event.pointerId !== activePointerId) return;
+
+  event.preventDefault();
+
+  const targetElement = document.elementFromPoint(
+    event.clientX,
+    event.clientY
   );
 
-  const otherTeams = [
-    ...listElement.querySelectorAll(".team:not(.dragging)")
-  ];
+  if (!targetElement) return;
 
-  let target = null;
+  const target = targetElement.closest(".team");
 
-  for (const team of otherTeams) {
-    const rect = team.getBoundingClientRect();
-    const middle = rect.top + rect.height / 2;
+  if (!target || target === activeTeam) return;
 
-    if (event.clientY < middle) {
-      target = team;
-      break;
-    }
+  if (target.dataset.conference !== activeConference) {
+    return;
   }
 
-  if (target) {
-    listElement.insertBefore(draggedTeam, target);
+  moved = true;
+
+  const rect = target.getBoundingClientRect();
+  const middle = rect.top + rect.height / 2;
+
+  const list = target.parentElement;
+
+  if (event.clientY < middle) {
+    list.insertBefore(activeTeam, target);
   } else {
-    listElement.appendChild(draggedTeam);
+    list.insertBefore(activeTeam, target.nextSibling);
   }
 
-  otherTeams.forEach(team => team.classList.remove("over"));
-}
+}, { passive: false });
 
-function endDrag() {
-  if (!draggedTeam) return;
+// FIN DU DÉPLACEMENT
 
-  const team = draggedTeam;
-  const conference = draggedConference;
+function finishDrag(event) {
 
-  team.classList.remove("dragging");
-  team.removeEventListener("pointermove", dragMove);
-  team.removeEventListener("pointerup", endDrag);
-  team.removeEventListener("pointercancel", endDrag);
+  if (!activeTeam) return;
+  if (event.pointerId !== activePointerId) return;
 
-  if (isDragging) {
+  const conference = activeConference;
+
+  activeTeam.classList.remove("dragging");
+
+  if (moved) {
+
+    const container = document.getElementById(
+      conference + "-list"
+    );
+
     const newOrder = [
-      ...document.getElementById(conference + "-list")
-        .querySelectorAll(".team")
-    ].map(row => row.querySelector(".team-name").textContent);
+      ...container.querySelectorAll(".team")
+    ].map(row => {
+      return row.querySelector(".team-name").textContent;
+    });
 
     if (conference === "east") {
       east = newOrder;
@@ -412,16 +454,26 @@ function endDrag() {
     }
 
     save();
-    render();
   }
 
-  draggedTeam = null;
-  draggedConference = null;
-  isDragging = false;
+  activeTeam = null;
+  activeConference = null;
+  activePointerId = null;
+  moved = false;
+
+  render();
 }
 
+document.addEventListener("pointerup", finishDrag);
+document.addEventListener("pointercancel", finishDrag);
+
+// RÉINITIALISATION
+
 document.getElementById("reset").addEventListener("click", () => {
-  if (!confirm("Réinitialiser tous les pronostics ?")) return;
+
+  if (!confirm("Veux-tu réinitialiser les deux classements ?")) {
+    return;
+  }
 
   east = [...initialEast];
   west = [...initialWest];
@@ -430,7 +482,10 @@ document.getElementById("reset").addEventListener("click", () => {
   render();
 });
 
+// EXPORT DES PRONOSTICS
+
 document.getElementById("export").addEventListener("click", () => {
+
   const content =
     "MON PRONOSTIC NBA\n\n" +
     "CONFÉRENCE EST\n" +
@@ -447,13 +502,17 @@ document.getElementById("export").addEventListener("click", () => {
 
   link.href = url;
   link.download = "mon-pronostic-nba.txt";
+
   link.click();
 
   URL.revokeObjectURL(url);
 });
 
+// LANCEMENT DU SITE
+
 load();
 render();
+
 </script>
 
 </body>

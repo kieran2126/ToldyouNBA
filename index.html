@@ -1,720 +1,718 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>Mon pronostic NBA</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --page: #101827;
+      --panel: #1c293b;
+      --row: #29384d;
+      --muted: #aab5c5;
+      --green: #16845d;
+      --yellow: #e4a52c;
+      --blue: #1769aa;
+      --red: #c43d43;
+      --line: #35445a;
+    }
 
-<title>Mon Pronostic NBA</title>
+    * { box-sizing: border-box; }
 
-<style>
-* {
-  box-sizing: border-box;
-}
+    body {
+      margin: 0;
+      padding: 18px;
+      background: var(--page);
+      color: #fff;
+      font-family: Arial, Helvetica, sans-serif;
+    }
 
-body {
-  margin: 0;
-  padding: 20px;
-  font-family: Arial, sans-serif;
-  background: #101827;
-  color: white;
-}
+    button { font: inherit; }
 
-h1 {
-  text-align: center;
-  margin-bottom: 8px;
-  font-size: 30px;
-}
+    h1 {
+      margin: 5px 0 8px;
+      text-align: center;
+      font-size: 29px;
+    }
 
-.subtitle {
-  text-align: center;
-  color: #aab5c5;
-  margin-bottom: 25px;
-}
+    .subtitle, .hint {
+      color: var(--muted);
+      text-align: center;
+    }
 
-.conferences {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
-  max-width: 1150px;
-  margin: auto;
-}
+    .subtitle { margin: 0 0 22px; }
 
-.conference {
-  background: #1c293b;
-  border-radius: 14px;
-  padding: 16px;
-  min-width: 0;
-}
+    .legend, .result-legend {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 0 auto 18px;
+      color: #c1cada;
+      font-size: 12px;
+    }
 
-.conference h2 {
-  text-align: center;
-  padding: 14px;
-  margin: 0 0 16px;
-  border-radius: 9px;
-  font-size: 19px;
-}
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
 
-.east h2 {
-  background: #1769aa;
-}
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      display: inline-block;
+    }
 
-.west h2 {
-  background: #c43d43;
-}
+    .conferences {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+      max-width: 1100px;
+      margin: auto;
+    }
 
-/* LÉGENDE */
+    .conference, .result-card {
+      min-width: 0;
+      padding: 14px;
+      border-radius: 14px;
+      background: var(--panel);
+    }
 
-.legend {
-  max-width: 1150px;
-  margin: 0 auto 22px;
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  flex-wrap: wrap;
-}
+    .conference-title, .result-card h3 {
+      margin: 0 0 14px;
+      padding: 11px;
+      border-radius: 9px;
+      text-align: center;
+      font-size: 17px;
+    }
 
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: #c1cada;
-  font-size: 12px;
-}
+    .east-title { background: var(--blue); }
+    .west-title { background: var(--red); }
 
-.legend-color {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-}
+    .team-list { min-height: 35px; }
 
-.direct-color {
-  background: #16845d;
-}
+    .team {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+      margin-bottom: 7px;
+      padding: 9px 7px;
+      border-radius: 8px;
+      background: var(--row);
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      cursor: grab;
+    }
 
-.playin-color {
-  background: #c68b28;
-}
+    .team:active { cursor: grabbing; }
+    .team.dragging {
+      opacity: .35;
+      border: 2px dashed #64c7ff;
+      pointer-events: none;
+    }
 
-.out-color {
-  background: #43546c;
-}
+    .team.direct { border-left: 4px solid var(--green); }
+    .team.playin {
+      border-left: 4px solid var(--yellow);
+      background: #403822;
+    }
+    .team.out { border-left: 4px solid #43546c; }
 
-/* ÉQUIPES */
+    .team.playin-start {
+      position: relative;
+      margin-top: 29px;
+      border-top: 2px dashed var(--yellow);
+    }
 
-.team-list {
-  min-height: 40px;
-}
+    .team.playin-start::before {
+      content: "ZONE PLAY-IN · 7 À 10";
+      position: absolute;
+      top: -22px;
+      left: 3px;
+      color: #f3bf58;
+      font-size: 10px;
+      font-weight: bold;
+    }
 
-.team {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  background: #29384d;
-  margin-bottom: 8px;
-  padding: 12px 9px;
-  border-radius: 9px;
-  cursor: grab;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: none;
-  position: relative;
-  transition: background 0.15s;
-}
+    .team.playin-end {
+      position: relative;
+      margin-bottom: 29px;
+      border-bottom: 2px dashed var(--yellow);
+    }
 
-.team:active {
-  cursor: grabbing;
-}
+    .team.playin-end::after {
+      content: "FIN DU PLAY-IN";
+      position: absolute;
+      bottom: -20px;
+      left: 3px;
+      color: #f3bf58;
+      font-size: 9px;
+      font-weight: bold;
+    }
 
-.team.dragging {
-  opacity: 0.4;
-  background: #506782;
-  border: 2px dashed #64c7ff;
-  pointer-events: none;
-}
+    .position {
+      flex: 0 0 21px;
+      color: #c1cada;
+      text-align: center;
+      font-size: 12px;
+      font-weight: bold;
+    }
 
-/* QUALIFICATION DIRECTE */
+    .team-logo {
+      flex: 0 0 29px;
+      width: 29px;
+      height: 29px;
+      object-fit: contain;
+    }
 
-.team.direct {
-  border-left: 4px solid #16845d;
-}
+    .team-name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      font-size: 13px;
+      font-weight: bold;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-/* ZONE PLAY-IN : PLACES 7 À 10 */
+    .drag-handle {
+      flex: none;
+      padding: 0 3px;
+      color: var(--muted);
+      font-size: 19px;
+    }
 
-.team.playin {
-  background: #403822;
-  border-left: 4px solid #e4a52c;
-}
+    .move-buttons {
+      display: flex;
+      flex: none;
+      gap: 3px;
+    }
 
-.team.playin-start {
-  margin-top: 34px;
-  border-top: 2px dashed #e4a52c;
-}
+    .move-buttons button, .actions button, .result-actions button {
+      border: 0;
+      border-radius: 7px;
+      cursor: pointer;
+      font-weight: bold;
+    }
 
-.team.playin-start::before {
-  content: "ZONE PLAY-IN • PLACES 7 À 10";
-  position: absolute;
-  top: -27px;
-  left: 4px;
-  color: #f3bf58;
-  font-size: 11px;
-  font-weight: bold;
-  letter-spacing: 0.5px;
-}
+    .move-buttons button {
+      padding: 5px 8px;
+      background: #43546c;
+      color: white;
+      font-size: 15px;
+    }
 
-.team.playin-end {
-  margin-bottom: 36px;
-  border-bottom: 2px dashed #e4a52c;
-}
+    button:focus-visible {
+      outline: 3px solid #64c7ff;
+      outline-offset: 2px;
+    }
 
-.team.playin-end::after {
-  content: "FIN DE LA ZONE PLAY-IN";
-  position: absolute;
-  bottom: -25px;
-  left: 4px;
-  color: #f3bf58;
-  font-size: 10px;
-  font-weight: bold;
-}
+    .hint {
+      margin: 18px 0;
+      font-size: 13px;
+    }
 
-/* ÉQUIPES NON QUALIFIÉES */
+    .actions, .result-actions {
+      margin: 22px auto;
+      text-align: center;
+    }
 
-.team.out {
-  border-left: 4px solid #43546c;
-}
+    .actions button, .result-actions button {
+      margin: 4px;
+      padding: 12px 17px;
+      background: #43546c;
+      color: white;
+      font-size: 14px;
+    }
 
-.position {
-  width: 25px;
-  flex-shrink: 0;
-  color: #c1cada;
-  font-weight: bold;
-  text-align: center;
-}
+    #save-button, .result-actions .print-button { background: var(--green); }
 
-.team-logo {
-  width: 34px;
-  height: 34px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
+    #results {
+      display: none;
+      max-width: 1000px;
+      margin: auto;
+    }
 
-.team-name {
-  flex: 1;
-  font-size: 14px;
-  font-weight: bold;
-  min-width: 0;
-}
+    .result-heading {
+      margin: 0 0 12px;
+      text-align: center;
+    }
 
-.handle {
-  color: #aab5c5;
-  font-size: 21px;
-  padding: 0 4px;
-}
+    .result-heading h2 {
+      margin: 0 0 5px;
+      font-size: 22px;
+    }
 
-.move {
-  display: flex;
-  gap: 4px;
-  flex-shrink: 0;
-}
+    .result-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
 
-.move button {
-  border: 0;
-  border-radius: 5px;
-  background: #43546c;
-  color: white;
-  padding: 6px 9px;
-  cursor: pointer;
-  font-size: 16px;
-}
+    .result-legend {
+      gap: 10px;
+      margin: 8px 0;
+      font-size: 9px;
+    }
 
-.move button:hover {
-  background: #607794;
-}
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
 
-/* BOUTONS */
+    .result-card { padding: 10px; }
+    .result-card h3 {
+      margin-bottom: 8px;
+      padding: 8px;
+      font-size: 13px;
+    }
 
-.actions {
-  text-align: center;
-  margin: 28px 0;
-}
+    .result-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 29px;
+      padding: 3px 4px;
+      border-bottom: 1px solid var(--line);
+      font-size: 10px;
+    }
 
-.actions button {
-  padding: 12px 18px;
-  margin: 5px;
-  border: 0;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 14px;
-}
+    .result-row:last-child { border-bottom: 0; }
+    .result-row.direct { border-left: 3px solid var(--green); }
+    .result-row.playin {
+      border-left: 3px solid var(--yellow);
+      background: #403822;
+    }
+    .result-row.out { border-left: 3px solid #43546c; }
 
-#reset {
-  background: #43546c;
-  color: white;
-}
+    .rank {
+      flex: 0 0 16px;
+      color: #b9c6d8;
+      text-align: center;
+      font-weight: bold;
+    }
 
-#export {
-  background: #16845d;
-  color: white;
-}
+    .result-row img {
+      flex: 0 0 21px;
+      width: 21px;
+      height: 21px;
+      object-fit: contain;
+    }
 
-.hint {
-  text-align: center;
-  color: #aab5c5;
-  font-size: 13px;
-  margin-top: 22px;
-}
+    .result-name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      font-weight: bold;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-@media (max-width: 650px) {
-  body {
-    padding: 12px;
-  }
+    #saved-message {
+      margin: 8px;
+      color: #65d6a6;
+      text-align: center;
+      font-size: 12px;
+    }
 
-  h1 {
-    font-size: 25px;
-  }
+    @media (max-width: 650px) {
+      body { padding: 10px; }
+      h1 { font-size: 24px; }
+      .conferences { grid-template-columns: 1fr; gap: 14px; }
+      .conference { padding: 11px; }
+      .team { padding: 11px 7px; }
+    }
 
-  .conferences {
-    grid-template-columns: 1fr;
-    gap: 18px;
-  }
-
-  .conference {
-    padding: 12px;
-  }
-
-  .team {
-    padding: 12px 7px;
-    gap: 7px;
-  }
-
-  .team-name {
-    font-size: 13px;
-  }
-
-  .team-logo {
-    width: 30px;
-    height: 30px;
-  }
-
-  .move button {
-    padding: 6px 8px;
-  }
-}
-</style>
+    @media print {
+      body {
+        padding: 0;
+        background: var(--page) !important;
+        color: white !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      #editor, .result-actions { display: none !important; }
+      #results { display: block !important; max-width: none; }
+      .result-grid { gap: 8px; }
+    }
+  </style>
 </head>
-
 <body>
+  <main id="editor">
+    <h1>🏀 MON PRONOSTIC NBA</h1>
+    <p class="subtitle">Classe les 30 équipes comme tu le souhaites</p>
 
-<h1>🏀 Mon Pronostic NBA</h1>
+    <div class="legend" aria-label="Légende du classement">
+      <span class="legend-item"><i class="dot" style="background:#16845d"></i>1–6 Playoffs</span>
+      <span class="legend-item"><i class="dot" style="background:#e4a52c"></i>7–10 Play-in</span>
+      <span class="legend-item"><i class="dot" style="background:#43546c"></i>11–15 Hors qualification</span>
+    </div>
 
-<p class="subtitle">
-  Organise ton classement NBA comme tu le souhaites
-</p>
+    <div class="conferences">
+      <section class="conference">
+        <h2 class="conference-title east-title">CONFÉRENCE EST</h2>
+        <div id="east-list" class="team-list" aria-label="Classement de la conférence Est"></div>
+      </section>
+      <section class="conference">
+        <h2 class="conference-title west-title">CONFÉRENCE OUEST</h2>
+        <div id="west-list" class="team-list" aria-label="Classement de la conférence Ouest"></div>
+      </section>
+    </div>
 
-<div class="legend">
-  <div class="legend-item">
-    <span class="legend-color direct-color"></span>
-    Places 1 à 6 : Playoffs
-  </div>
+    <p class="hint">Fais glisser les équipes avec la souris ou ton doigt. Tu peux aussi utiliser les flèches ↑ ↓.</p>
+    <div class="actions">
+      <button id="save-button" type="button">✓ Enregistrer mon pronostic</button>
+      <button id="reset-button" type="button">↻ Réinitialiser</button>
+    </div>
+  </main>
 
-  <div class="legend-item">
-    <span class="legend-color playin-color"></span>
-    Places 7 à 10 : Play-in
-  </div>
+  <section id="results" aria-label="Résultat du pronostic">
+    <header class="result-heading">
+      <h2>🏆 MON PRONOSTIC NBA</h2>
+      <p id="saved-date">Classement final prévisionnel</p>
+    </header>
 
-  <div class="legend-item">
-    <span class="legend-color out-color"></span>
-    Places 11 à 15 : Éliminées
-  </div>
-</div>
+    <div class="result-legend">
+      <span>🟩 1–6 Playoffs</span>
+      <span>🟨 7–10 Play-in</span>
+      <span>⬛ 11–15 Hors qualification</span>
+    </div>
 
-<div class="conferences">
+    <div class="result-grid">
+      <section class="result-card">
+        <h3 class="east-title">CONFÉRENCE EST</h3>
+        <div id="east-results"></div>
+      </section>
+      <section class="result-card">
+        <h3 class="west-title">CONFÉRENCE OUEST</h3>
+        <div id="west-results"></div>
+      </section>
+    </div>
 
-  <section class="conference east">
-    <h2>CONFÉRENCE EST</h2>
-    <div id="east-list" class="team-list"></div>
+    <div class="result-actions">
+      <button class="print-button" id="print-button" type="button">⤓ Imprimer / Enregistrer en PDF</button>
+      <button id="edit-button" type="button">Modifier mon pronostic</button>
+    </div>
+    <p id="saved-message">✓ Pronostic enregistré sur cet appareil</p>
   </section>
 
-  <section class="conference west">
-    <h2>CONFÉRENCE OUEST</h2>
-    <div id="west-list" class="team-list"></div>
-  </section>
+  <script>
+    "use strict";
 
-</div>
+    const INITIAL_EAST = [
+      "Boston Celtics", "New York Knicks", "Milwaukee Bucks",
+      "Cleveland Cavaliers", "Indiana Pacers", "Philadelphia 76ers",
+      "Miami Heat", "Orlando Magic", "Atlanta Hawks", "Chicago Bulls",
+      "Brooklyn Nets", "Toronto Raptors", "Charlotte Hornets",
+      "Washington Wizards", "Detroit Pistons"
+    ];
 
-<p class="hint">
-  ☝️ Maintiens une équipe et fais-la glisser pour changer sa position.
-</p>
+    const INITIAL_WEST = [
+      "Oklahoma City Thunder", "Denver Nuggets", "Minnesota Timberwolves",
+      "Dallas Mavericks", "Phoenix Suns", "LA Clippers",
+      "Los Angeles Lakers", "Golden State Warriors", "Sacramento Kings",
+      "New Orleans Pelicans", "Houston Rockets", "Memphis Grizzlies",
+      "San Antonio Spurs", "Portland Trail Blazers", "Utah Jazz"
+    ];
 
-<div class="actions">
-  <button id="reset">↻ Réinitialiser</button>
-  <button id="export">↓ Exporter mes pronostics</button>
-</div>
+    const LOGO_CODES = {
+      "Atlanta Hawks": "atl",
+      "Boston Celtics": "bos",
+      "Brooklyn Nets": "bkn",
+      "Charlotte Hornets": "cha",
+      "Chicago Bulls": "chi",
+      "Cleveland Cavaliers": "cle",
+      "Dallas Mavericks": "dal",
+      "Denver Nuggets": "den",
+      "Detroit Pistons": "det",
+      "Golden State Warriors": "gs",
+      "Houston Rockets": "hou",
+      "Indiana Pacers": "ind",
+      "LA Clippers": "lac",
+      "Los Angeles Lakers": "lal",
+      "Memphis Grizzlies": "mem",
+      "Miami Heat": "mia",
+      "Milwaukee Bucks": "mil",
+      "Minnesota Timberwolves": "min",
+      "New Orleans Pelicans": "no",
+      "New York Knicks": "ny",
+      "Oklahoma City Thunder": "okc",
+      "Orlando Magic": "orl",
+      "Philadelphia 76ers": "phi",
+      "Phoenix Suns": "phx",
+      "Portland Trail Blazers": "por",
+      "Sacramento Kings": "sac",
+      "San Antonio Spurs": "sa",
+      "Toronto Raptors": "tor",
+      "Utah Jazz": "utah",
+      "Washington Wizards": "wsh"
+    };
 
-<script>
+    const STORAGE_KEYS = {
+      east: "nba-east",
+      west: "nba-west"
+    };
 
-// ÉQUIPES DE LA CONFÉRENCE EST
+    let rankings = {
+      east: [...INITIAL_EAST],
+      west: [...INITIAL_WEST]
+    };
 
-const initialEast = [
-  "Boston Celtics",
-  "New York Knicks",
-  "Milwaukee Bucks",
-  "Cleveland Cavaliers",
-  "Indiana Pacers",
-  "Philadelphia 76ers",
-  "Miami Heat",
-  "Orlando Magic",
-  "Atlanta Hawks",
-  "Chicago Bulls",
-  "Brooklyn Nets",
-  "Toronto Raptors",
-  "Charlotte Hornets",
-  "Washington Wizards",
-  "Detroit Pistons"
-];
+    let draggedRow = null;
+    let draggedConference = null;
+    let activePointerId = null;
+    let dragChanged = false;
 
-// ÉQUIPES DE LA CONFÉRENCE OUEST
+    const $ = (selector) => document.querySelector(selector);
 
-const initialWest = [
-  "Oklahoma City Thunder",
-  "Denver Nuggets",
-  "Minnesota Timberwolves",
-  "Dallas Mavericks",
-  "Phoenix Suns",
-  "LA Clippers",
-  "Los Angeles Lakers",
-  "Golden State Warriors",
-  "Sacramento Kings",
-  "New Orleans Pelicans",
-  "Houston Rockets",
-  "Memphis Grizzlies",
-  "San Antonio Spurs",
-  "Portland Trail Blazers",
-  "Utah Jazz"
-];
-
-// LOGOS DES ÉQUIPES
-
-const teamLogos = {
-  "Atlanta Hawks": "atl",
-  "Boston Celtics": "bos",
-  "Brooklyn Nets": "bkn",
-  "Charlotte Hornets": "cha",
-  "Chicago Bulls": "chi",
-  "Cleveland Cavaliers": "cle",
-  "Dallas Mavericks": "dal",
-  "Denver Nuggets": "den",
-  "Detroit Pistons": "det",
-  "Golden State Warriors": "gs",
-  "Houston Rockets": "hou",
-  "Indiana Pacers": "ind",
-  "LA Clippers": "lac",
-  "Los Angeles Lakers": "lal",
-  "Memphis Grizzlies": "mem",
-  "Miami Heat": "mia",
-  "Milwaukee Bucks": "mil",
-  "Minnesota Timberwolves": "min",
-  "New Orleans Pelicans": "no",
-  "New York Knicks": "ny",
-  "Oklahoma City Thunder": "okc",
-  "Orlando Magic": "orl",
-  "Philadelphia 76ers": "phi",
-  "Phoenix Suns": "phx",
-  "Portland Trail Blazers": "por",
-  "Sacramento Kings": "sac",
-  "San Antonio Spurs": "sa",
-  "Toronto Raptors": "tor",
-  "Utah Jazz": "utah",
-  "Washington Wizards": "wsh"
-};
-
-// CLASSEMENTS
-
-let east = [...initialEast];
-let west = [...initialWest];
-
-let activeTeam = null;
-let activeConference = null;
-let activePointerId = null;
-let moved = false;
-
-// SAUVEGARDE
-
-function save() {
-  localStorage.setItem("nba-east", JSON.stringify(east));
-  localStorage.setItem("nba-west", JSON.stringify(west));
-}
-
-// CHARGEMENT
-
-function load() {
-  try {
-    const savedEast = JSON.parse(localStorage.getItem("nba-east"));
-    const savedWest = JSON.parse(localStorage.getItem("nba-west"));
-
-    if (
-      Array.isArray(savedEast) &&
-      savedEast.length === 15 &&
-      initialEast.every(team => savedEast.includes(team))
-    ) {
-      east = savedEast;
+    function getLogoUrl(team) {
+      const code = LOGO_CODES[team];
+      return `https://a.espncdn.com/i/teamlogos/nba/500/${code}.png`;
     }
 
-    if (
-      Array.isArray(savedWest) &&
-      savedWest.length === 15 &&
-      initialWest.every(team => savedWest.includes(team))
-    ) {
-      west = savedWest;
+    function getTier(position) {
+      if (position < 6) return "direct";
+      if (position < 10) return "playin";
+      return "out";
     }
 
-  } catch (error) {
-    console.log("Chargement impossible.");
-  }
-}
+    function saveRankings() {
+      try {
+        localStorage.setItem(STORAGE_KEYS.east, JSON.stringify(rankings.east));
+        localStorage.setItem(STORAGE_KEYS.west, JSON.stringify(rankings.west));
+      } catch (error) {
+        console.warn("Le classement n'a pas pu être sauvegardé.", error);
+      }
+    }
 
-// AFFICHAGE DES ÉQUIPES
+    function isValidRanking(value, initialTeams) {
+      return Array.isArray(value) &&
+        value.length === 15 &&
+        new Set(value).size === 15 &&
+        initialTeams.every(team => value.includes(team));
+    }
 
-function renderList(list, id, conference) {
-  const container = document.getElementById(id);
-  container.innerHTML = "";
+    function loadRankings() {
+      try {
+        const east = JSON.parse(localStorage.getItem(STORAGE_KEYS.east));
+        const west = JSON.parse(localStorage.getItem(STORAGE_KEYS.west));
 
-  list.forEach((team, index) => {
+        if (isValidRanking(east, INITIAL_EAST)) rankings.east = east;
+        if (isValidRanking(west, INITIAL_WEST)) rankings.west = west;
+      } catch (error) {
+        console.warn("Impossible de charger le classement sauvegardé.", error);
+      }
+    }
 
-    const position = index + 1;
+    function createTeamRow(team, position, conference) {
+      const row = document.createElement("div");
+      row.className = `team ${getTier(position)}`;
+      row.dataset.team = team;
+      row.dataset.conference = conference;
 
-    const row = document.createElement("div");
+      if (position === 6) row.classList.add("playin-start");
+      if (position === 9) row.classList.add("playin-end");
 
-    row.className = "team";
+      const rank = document.createElement("span");
+      rank.className = "position";
+      rank.textContent = position + 1;
 
-    if (position <= 6) {
-      row.classList.add("direct");
-    } else if (position <= 10) {
-      row.classList.add("playin");
+      const image = document.createElement("img");
+      image.className = "team-logo";
+      image.src = getLogoUrl(team);
+      image.alt = "";
+      image.draggable = false;
+      image.addEventListener("error", () => { image.style.visibility = "hidden"; });
 
-      if (position === 7) {
-        row.classList.add("playin-start");
+      const name = document.createElement("span");
+      name.className = "team-name";
+      name.textContent = team;
+
+      const handle = document.createElement("span");
+      handle.className = "drag-handle";
+      handle.textContent = "☰";
+      handle.setAttribute("aria-hidden", "true");
+
+      const controls = document.createElement("span");
+      controls.className = "move-buttons";
+
+      const up = document.createElement("button");
+      up.type = "button";
+      up.textContent = "↑";
+      up.setAttribute("aria-label", `Monter ${team}`);
+      up.disabled = position === 0;
+      up.addEventListener("click", () => moveTeam(conference, position, position - 1));
+
+      const down = document.createElement("button");
+      down.type = "button";
+      down.textContent = "↓";
+      down.setAttribute("aria-label", `Descendre ${team}`);
+      down.disabled = position === 14;
+      down.addEventListener("click", () => moveTeam(conference, position, position + 1));
+
+      controls.append(up, down);
+      row.append(rank, image, name, handle, controls);
+      row.addEventListener("pointerdown", beginDrag);
+
+      return row;
+    }
+
+    function renderConference(conference) {
+      const container = document.getElementById(`${conference}-list`);
+      container.replaceChildren();
+
+      rankings[conference].forEach((team, position) => {
+        container.appendChild(createTeamRow(team, position, conference));
+      });
+    }
+
+    function renderAll() {
+      renderConference("east");
+      renderConference("west");
+    }
+
+    function moveTeam(conference, from, to) {
+      const list = rankings[conference];
+      if (to < 0 || to >= list.length || from === to) return;
+
+      const [team] = list.splice(from, 1);
+      list.splice(to, 0, team);
+      saveRankings();
+      renderAll();
+    }
+
+    function beginDrag(event) {
+      if (event.target.closest("button")) return;
+      if (!event.isPrimary || (event.pointerType === "mouse" && event.button !== 0)) return;
+
+      draggedRow = event.currentTarget;
+      draggedConference = draggedRow.dataset.conference;
+      activePointerId = event.pointerId;
+      dragChanged = false;
+
+      event.preventDefault();
+      draggedRow.classList.add("dragging");
+    }
+
+    function moveDraggedRow(event) {
+      if (!draggedRow || event.pointerId !== activePointerId) return;
+      event.preventDefault();
+
+      const elementUnderPointer = document.elementFromPoint(event.clientX, event.clientY);
+      const targetRow = elementUnderPointer?.closest(".team");
+
+      if (!targetRow || targetRow === draggedRow) return;
+      if (targetRow.dataset.conference !== draggedConference) return;
+
+      const bounds = targetRow.getBoundingClientRect();
+      const insertAfter = event.clientY > bounds.top + bounds.height / 2;
+
+      targetRow.parentElement.insertBefore(
+        draggedRow,
+        insertAfter ? targetRow.nextSibling : targetRow
+      );
+      dragChanged = true;
+    }
+
+    function endDrag(event) {
+      if (!draggedRow || event.pointerId !== activePointerId) return;
+
+      const conference = draggedConference;
+      const container = draggedRow.parentElement;
+      draggedRow.classList.remove("dragging");
+
+      if (dragChanged) {
+        rankings[conference] = [...container.querySelectorAll(".team")]
+          .map(row => row.dataset.team);
+        saveRankings();
       }
 
-      if (position === 10) {
-        row.classList.add("playin-end");
-      }
-    } else {
-      row.classList.add("out");
+      draggedRow = null;
+      draggedConference = null;
+      activePointerId = null;
+      dragChanged = false;
+      renderAll();
     }
 
-    row.dataset.conference = conference;
+    function createResultRow(team, position) {
+      const row = document.createElement("div");
+      row.className = `result-row ${getTier(position)}`;
 
-    const logoCode = teamLogos[team];
+      const rank = document.createElement("span");
+      rank.className = "rank";
+      rank.textContent = position + 1;
 
-    row.innerHTML = `
-      <span class="position">${position}</span>
+      const image = document.createElement("img");
+      image.src = getLogoUrl(team);
+      image.alt = "";
+      image.addEventListener("error", () => { image.style.visibility = "hidden"; });
 
-      <img
-        class="team-logo"
-        src="https://a.espncdn.com/i/teamlogos/nba/500/${logoCode}.png"
-        alt="Logo ${team}"
-        draggable="false"
-        onerror="this.style.visibility='hidden'"
-      >
+      const name = document.createElement("span");
+      name.className = "result-name";
+      name.textContent = team;
+      name.title = team;
 
-      <span class="team-name"></span>
-
-      <span class="handle">☰</span>
-
-      <span class="move">
-        <button type="button" class="up" aria-label="Monter">↑</button>
-        <button type="button" class="down" aria-label="Descendre">↓</button>
-      </span>
-    `;
-
-    row.querySelector(".team-name").textContent = team;
-
-    row.querySelector(".up").addEventListener("click", () => {
-      moveTeam(conference, index, index - 1);
-    });
-
-    row.querySelector(".down").addEventListener("click", () => {
-      moveTeam(conference, index, index + 1);
-    });
-
-    row.addEventListener("pointerdown", startDrag);
-
-    container.appendChild(row);
-  });
-}
-
-function render() {
-  renderList(east, "east-list", "east");
-  renderList(west, "west-list", "west");
-}
-
-// DÉPLACEMENT AVEC LES FLÈCHES
-
-function moveTeam(conference, from, to) {
-  const list = conference === "east" ? east : west;
-
-  if (to < 0 || to >= list.length || from === to) {
-    return;
-  }
-
-  const team = list.splice(from, 1)[0];
-  list.splice(to, 0, team);
-
-  save();
-  render();
-}
-
-// DÉBUT DU GLISSER-DÉPOSER
-
-function startDrag(event) {
-  if (event.target.closest("button")) return;
-  if (!event.isPrimary) return;
-
-  if (event.pointerType === "mouse" && event.button !== 0) {
-    return;
-  }
-
-  activeTeam = event.currentTarget;
-  activeConference = activeTeam.dataset.conference;
-  activePointerId = event.pointerId;
-  moved = false;
-
-  event.preventDefault();
-
-  activeTeam.classList.add("dragging");
-}
-
-// DÉPLACEMENT À LA SOURIS OU AU DOIGT
-
-document.addEventListener("pointermove", event => {
-
-  if (!activeTeam) return;
-  if (event.pointerId !== activePointerId) return;
-
-  event.preventDefault();
-
-  const targetElement = document.elementFromPoint(
-    event.clientX,
-    event.clientY
-  );
-
-  if (!targetElement) return;
-
-  const target = targetElement.closest(".team");
-
-  if (!target || target === activeTeam) return;
-
-  if (target.dataset.conference !== activeConference) {
-    return;
-  }
-
-  moved = true;
-
-  const rect = target.getBoundingClientRect();
-  const middle = rect.top + rect.height / 2;
-
-  const list = target.parentElement;
-
-  if (event.clientY < middle) {
-    list.insertBefore(activeTeam, target);
-  } else {
-    list.insertBefore(activeTeam, target.nextSibling);
-  }
-
-}, { passive: false });
-
-// FIN DU DÉPLACEMENT
-
-function finishDrag(event) {
-
-  if (!activeTeam) return;
-  if (event.pointerId !== activePointerId) return;
-
-  const conference = activeConference;
-
-  activeTeam.classList.remove("dragging");
-
-  if (moved) {
-
-    const container = document.getElementById(
-      conference + "-list"
-    );
-
-    const newOrder = [
-      ...container.querySelectorAll(".team")
-    ].map(row => {
-      return row.querySelector(".team-name").textContent;
-    });
-
-    if (conference === "east") {
-      east = newOrder;
-    } else {
-      west = newOrder;
+      row.append(rank, image, name);
+      return row;
     }
 
-    save();
-  }
+    function renderResults(conference) {
+      const container = document.getElementById(`${conference}-results`);
+      container.replaceChildren();
 
-  activeTeam = null;
-  activeConference = null;
-  activePointerId = null;
-  moved = false;
+      rankings[conference].forEach((team, position) => {
+        container.appendChild(createResultRow(team, position));
+      });
+    }
 
-  render();
-}
+    function showResults() {
+      saveRankings();
+      renderResults("east");
+      renderResults("west");
 
-document.addEventListener("pointerup", finishDrag);
-document.addEventListener("pointercancel", finishDrag);
+      $("#saved-date").textContent =
+        `Classement prévisionnel enregistré · ${new Date().toLocaleDateString("fr-FR")}`;
 
-// RÉINITIALISATION
+      $("#editor").style.display = "none";
+      $("#results").style.display = "block";
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
 
-document.getElementById("reset").addEventListener("click", () => {
+    function showEditor() {
+      $("#results").style.display = "none";
+      $("#editor").style.display = "block";
+      renderAll();
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
 
-  if (!confirm("Veux-tu réinitialiser les deux classements ?")) {
-    return;
-  }
+    function resetRankings() {
+      const confirmed = window.confirm("Réinitialiser les deux classements ?");
+      if (!confirmed) return;
 
-  east = [...initialEast];
-  west = [...initialWest];
+      rankings.east = [...INITIAL_EAST];
+      rankings.west = [...INITIAL_WEST];
+      saveRankings();
+      renderAll();
+    }
 
-  save();
-  render();
-});
+    document.addEventListener("pointermove", moveDraggedRow, { passive: false });
+    document.addEventListener("pointerup", endDrag);
+    document.addEventListener("pointercancel", endDrag);
 
-// EXPORT DES PRONOSTICS
+    $("#save-button").addEventListener("click", showResults);
+    $("#edit-button").addEventListener("click", showEditor);
+    $("#reset-button").addEventListener("click", resetRankings);
+    $("#print-button").addEventListener("click", () => window.print());
 
-document.getElementById("export").addEventListener("click", () => {
-
-  const content =
-    "MON PRONOSTIC NBA\n\n" +
-    "CONFÉRENCE EST\n" +
-    east.map((team, i) => `${i + 1}. ${team}`).join("\n") +
-    "\n\nCONFÉRENCE OUEST\n" +
-    west.map((team, i) => `${i + 1}. ${team}`).join("\n");
-
-  const blob = new Blob([content], {
-    type: "text/plain;charset=utf-8"
-  });
-
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = "mon-pronostic-nba.txt";
-
-  link.click();
-
-  URL.revokeObjectURL(url);
-});
-
-// LANCEMENT
-
-load();
-render();
-
-</script>
-
+    loadRankings();
+    renderAll();
+  </script>
 </body>
 </html>

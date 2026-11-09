@@ -4,6 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Mon Pronostic NBA</title>
 
 <style>
@@ -35,7 +36,7 @@ h1 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
-  max-width: 1100px;
+  max-width: 1150px;
   margin: auto;
 }
 
@@ -62,6 +63,45 @@ h1 {
   background: #c43d43;
 }
 
+/* LÉGENDE */
+
+.legend {
+  max-width: 1150px;
+  margin: 0 auto 22px;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #c1cada;
+  font-size: 12px;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.direct-color {
+  background: #16845d;
+}
+
+.playin-color {
+  background: #c68b28;
+}
+
+.out-color {
+  background: #43546c;
+}
+
+/* ÉQUIPES */
+
 .team-list {
   min-height: 40px;
 }
@@ -78,6 +118,7 @@ h1 {
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
+  position: relative;
   transition: background 0.15s;
 }
 
@@ -86,18 +127,75 @@ h1 {
 }
 
 .team.dragging {
-  opacity: 0.45;
+  opacity: 0.4;
   background: #506782;
-  pointer-events: none;
   border: 2px dashed #64c7ff;
+  pointer-events: none;
+}
+
+/* QUALIFICATION DIRECTE */
+
+.team.direct {
+  border-left: 4px solid #16845d;
+}
+
+/* ZONE PLAY-IN : PLACES 7 À 10 */
+
+.team.playin {
+  background: #403822;
+  border-left: 4px solid #e4a52c;
+}
+
+.team.playin-start {
+  margin-top: 34px;
+  border-top: 2px dashed #e4a52c;
+}
+
+.team.playin-start::before {
+  content: "ZONE PLAY-IN • PLACES 7 À 10";
+  position: absolute;
+  top: -27px;
+  left: 4px;
+  color: #f3bf58;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.team.playin-end {
+  margin-bottom: 36px;
+  border-bottom: 2px dashed #e4a52c;
+}
+
+.team.playin-end::after {
+  content: "FIN DE LA ZONE PLAY-IN";
+  position: absolute;
+  bottom: -25px;
+  left: 4px;
+  color: #f3bf58;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+/* ÉQUIPES NON QUALIFIÉES */
+
+.team.out {
+  border-left: 4px solid #43546c;
 }
 
 .position {
   width: 25px;
   flex-shrink: 0;
-  color: #aab5c5;
+  color: #c1cada;
   font-weight: bold;
   text-align: center;
+}
+
+.team-logo {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .team-name {
@@ -116,6 +214,7 @@ h1 {
 .move {
   display: flex;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 .move button {
@@ -132,9 +231,11 @@ h1 {
   background: #607794;
 }
 
+/* BOUTONS */
+
 .actions {
   text-align: center;
-  margin: 25px 0;
+  margin: 28px 0;
 }
 
 .actions button {
@@ -183,11 +284,21 @@ h1 {
   }
 
   .team {
-    padding: 13px 8px;
+    padding: 12px 7px;
+    gap: 7px;
   }
 
   .team-name {
     font-size: 13px;
+  }
+
+  .team-logo {
+    width: 30px;
+    height: 30px;
+  }
+
+  .move button {
+    padding: 6px 8px;
   }
 }
 </style>
@@ -200,6 +311,23 @@ h1 {
 <p class="subtitle">
   Organise ton classement NBA comme tu le souhaites
 </p>
+
+<div class="legend">
+  <div class="legend-item">
+    <span class="legend-color direct-color"></span>
+    Places 1 à 6 : Playoffs
+  </div>
+
+  <div class="legend-item">
+    <span class="legend-color playin-color"></span>
+    Places 7 à 10 : Play-in
+  </div>
+
+  <div class="legend-item">
+    <span class="legend-color out-color"></span>
+    Places 11 à 15 : Éliminées
+  </div>
+</div>
 
 <div class="conferences">
 
@@ -225,6 +353,9 @@ h1 {
 </div>
 
 <script>
+
+// ÉQUIPES DE LA CONFÉRENCE EST
+
 const initialEast = [
   "Boston Celtics",
   "New York Knicks",
@@ -242,6 +373,8 @@ const initialEast = [
   "Washington Wizards",
   "Detroit Pistons"
 ];
+
+// ÉQUIPES DE LA CONFÉRENCE OUEST
 
 const initialWest = [
   "Oklahoma City Thunder",
@@ -261,6 +394,43 @@ const initialWest = [
   "Utah Jazz"
 ];
 
+// LOGOS DES ÉQUIPES
+
+const teamLogos = {
+  "Atlanta Hawks": "atl",
+  "Boston Celtics": "bos",
+  "Brooklyn Nets": "bkn",
+  "Charlotte Hornets": "cha",
+  "Chicago Bulls": "chi",
+  "Cleveland Cavaliers": "cle",
+  "Dallas Mavericks": "dal",
+  "Denver Nuggets": "den",
+  "Detroit Pistons": "det",
+  "Golden State Warriors": "gs",
+  "Houston Rockets": "hou",
+  "Indiana Pacers": "ind",
+  "LA Clippers": "lac",
+  "Los Angeles Lakers": "lal",
+  "Memphis Grizzlies": "mem",
+  "Miami Heat": "mia",
+  "Milwaukee Bucks": "mil",
+  "Minnesota Timberwolves": "min",
+  "New Orleans Pelicans": "no",
+  "New York Knicks": "ny",
+  "Oklahoma City Thunder": "okc",
+  "Orlando Magic": "orl",
+  "Philadelphia 76ers": "phi",
+  "Phoenix Suns": "phx",
+  "Portland Trail Blazers": "por",
+  "Sacramento Kings": "sac",
+  "San Antonio Spurs": "sa",
+  "Toronto Raptors": "tor",
+  "Utah Jazz": "utah",
+  "Washington Wizards": "wsh"
+};
+
+// CLASSEMENTS
+
 let east = [...initialEast];
 let west = [...initialWest];
 
@@ -276,7 +446,7 @@ function save() {
   localStorage.setItem("nba-west", JSON.stringify(west));
 }
 
-// CHARGEMENT DES CLASSEMENTS
+// CHARGEMENT
 
 function load() {
   try {
@@ -312,14 +482,45 @@ function renderList(list, id, conference) {
 
   list.forEach((team, index) => {
 
+    const position = index + 1;
+
     const row = document.createElement("div");
 
     row.className = "team";
+
+    if (position <= 6) {
+      row.classList.add("direct");
+    } else if (position <= 10) {
+      row.classList.add("playin");
+
+      if (position === 7) {
+        row.classList.add("playin-start");
+      }
+
+      if (position === 10) {
+        row.classList.add("playin-end");
+      }
+    } else {
+      row.classList.add("out");
+    }
+
     row.dataset.conference = conference;
 
+    const logoCode = teamLogos[team];
+
     row.innerHTML = `
-      <span class="position">${index + 1}</span>
+      <span class="position">${position}</span>
+
+      <img
+        class="team-logo"
+        src="https://a.espncdn.com/i/teamlogos/nba/500/${logoCode}.png"
+        alt="Logo ${team}"
+        draggable="false"
+        onerror="this.style.visibility='hidden'"
+      >
+
       <span class="team-name"></span>
+
       <span class="handle">☰</span>
 
       <span class="move">
@@ -508,7 +709,7 @@ document.getElementById("export").addEventListener("click", () => {
   URL.revokeObjectURL(url);
 });
 
-// LANCEMENT DU SITE
+// LANCEMENT
 
 load();
 render();
